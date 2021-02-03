@@ -1,0 +1,23 @@
+{
+  "name": "node-udp-app",
+  "version": "1.0.0",
+  "description": "An Node terminal app that uses udp connection",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LuanSilveiraSouza/node-udp-app.git"
+  },
+  "keywords": [],
+  "author": "Luan da Silveira de Souza",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LuanSilveiraSouza/node-udp-app/issues"
+  },
+  "homepage": "https://github.com/LuanSilveiraSouza/node-udp-app#readme",
+  "dependencies": {
+    "asciichart": "^1.5.25"
+  }
+}
