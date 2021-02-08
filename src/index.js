@@ -2,76 +2,60 @@ const { UDPClient } = require('./udp/client');
 const { getLinearFunction } = require('./getLinearFunction');
 const { setups } = require('./equationSetup');
 
+const client = new UDPClient();
+const responses = [];
 const x1 = 0;
 const x2 = 2;
-let actualSetup = 0;
-let actualEquation = 0;
-let msg;
 
-const client = new UDPClient();
-
-/*const timer = setInterval(() => {
-	if (actualSetup < setups.length) {
-		console.log(actualSetup);
-		msg = Buffer.from(
-			`${setups[actualSetup][actualEquation].number};${x1}`
-		);
+function sendMessages() {
+	let msg;
+	setups.forEach((setup) => {
+		msg = Buffer.from(`${setup[0].number};${x1}`);
 		client.send(msg);
-		msg = Buffer.from(
-			`${setups[actualSetup][actualEquation].number};${x2}`
-		);
+		msg = Buffer.from(`${setup[0].number};${x2}`);
+		client.send(msg);
 
-		actualSetup++;
+		msg = Buffer.from(`${setup[1].number};${x1}`);
+		client.send(msg);
+		msg = Buffer.from(`${setup[1].number};${x2}`);
+		client.send(msg);
+	});
+}
 
-		if (actualEquation == 0) {
-			actualEquation++;
-		} else {
-			actualEquation = 0;
-		}
-	} else {
-		clearInterval(timer);
-	}
-}, actualSetup * 50);*/
-
-setTimeout(() => {
-	actualEquation = 0;
-	msg = Buffer.from(`${setups[4][0].number};${x1}`);
-	client.send(msg);
-}, 10);
-
-setTimeout(() => {
-	msg = Buffer.from(`${setups[4][0].number};${x2}`);
-	client.send(msg);
-}, 20);
-
-setTimeout(() => {
-	actualEquation = 1;
-	msg = Buffer.from(`${setups[4][1].number};${x1}`);
-	client.send(msg);
-}, 30);
-
-setTimeout(() => {
-	msg = Buffer.from(`${setups[4][1].number};${x2}`);
-	client.send(msg);
-}, 40);
-
-client.messageListener('message', (msg) => {
-	if (setups[4][actualEquation].y1 == 0) {
-		setups[4][actualEquation].y1 = parseFloat(msg);
-	} else {
-		setups[4][actualEquation].y2 = parseFloat(msg);
-		const { a, b } = getLinearFunction([
-			{ x: x1, y: setups[4][actualEquation].y1 },
-			{ x: x2, y: setups[4][actualEquation].y2 },
+function discoverEquations() {
+	let equation;
+	setups.forEach((setup) => {
+		equation = getLinearFunction([
+			{ x: x1, y: setup[0].y1 },
+			{ x: x2, y: setup[0].y2 },
 		]);
-		setups[4][actualEquation].a = a;
-		setups[4][actualEquation].b = b;
-		setups[4][
-			actualEquation
-		].string = `f(x) = ${setups[4][actualEquation].a} * x + ${setups[4][actualEquation].b}`;
-	}
-});
+		setup[0].a = equation.a;
+		setup[0].b = equation.b;
 
-setTimeout(() => {
-	console.log(setups[4]);
-}, 50);
+		equation = getLinearFunction([
+			{ x: x1, y: setup[1].y1 },
+			{ x: x2, y: setup[1].y2 },
+		]);
+		setup[1].a = equation.a;
+		setup[1].b = equation.b;
+	});
+}
+
+(function main() {
+	sendMessages();
+
+	client.messageListener('message', (msg) => {
+		responses.push(parseFloat(msg));
+
+		if (responses.length >= 20) {
+			setups.forEach((setup, index) => {
+				setup[0].y1 = responses[index * 4];
+				setup[0].y2 = responses[index * 4 + 1];
+				setup[1].y1 = responses[index * 4 + 2];
+				setup[1].y2 = responses[index * 4 + 3];
+			});
+
+			discoverEquations();	
+		}
+	});
+})();
